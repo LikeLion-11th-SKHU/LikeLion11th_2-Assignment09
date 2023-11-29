@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedule Details</title>
+</head>
+<body>
+<h1>하윤일정 Detail</h1>
+
+{% if schedule %}
+    {% for schedule in schedule %}
+    <p>{{ schedule.date }}</p>
+    <h3>{{ schedule.title }}</h3>
+    <p>{{ schedule.content }}</p>
+    <a href="{% url 'update' id=schedule.id %}">수정</a> 
+    <a href="{% url 'delete' id=schedule.id %}">삭제</a>
+    <a href="{% url 'main' %}">메인으로</a>
+    {% endfor %}
+{% else %}
+    <a href="{% url 'main' %}">메인으로</a>
+{% endif %}
+
+</body>
+</html>
