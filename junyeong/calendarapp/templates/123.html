@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Main Page</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+</head>
+
+<body>
+    <div class="date_all">
+        <div class="date_month">
+            <div class="button_wrap">
+                <button type="button" id="month_prev" class="month_move" data-ym="2023-10-01">
+                    < </button>
+                        <span id="month_now">2023.11</span>
+                        <button type="button" id="month_next" class="month_move" data-ym="2023-12-01"> > </button>
+            </div>
+            <a href="{% url 'create' %}">일정추가</a>
+        </div>
+        <table class="date_month">
+            <thead>
+                <tr>
+                    <th>일</th>
+                    <th>월</th>
+                    <th>화</th>
+                    <th>수</th>
+                    <th>목</th>
+                    <th>금</th>
+                    <th>토</th>
+                </tr>
+            </thead>
+            <tbody id="tbl_month"></tbody>
+        </table>
+    </div>
+    <script>
+        function prevMonth(date) {
+            var target = new Date(date);
+            target.setDate(1);
+            target.setMonth(target.getMonth() - 1);
+            return getYmd(target);
+        }
+
+        function nextMonth(date) {
+            var target = new Date(date);
+            target.setDate(1);
+            target.setMonth(target.getMonth() + 1);
+            return getYmd(target);
+        }
+
+        function getYmd(target) {
+            var month = ('0' + (target.getMonth() + 1)).slice(-2);
+            return [target.getFullYear(), month, '01'].join('-');
+        }
+        function fullDays(date) {
+            var target = new Date(date);
+            var year = target.getFullYear();
+            var month = target.getMonth() + 1;
+
+            var firstWeekDay = new Date(year, month, 1).getDay();
+            var thisDays = new Date(year, month + 1, 0).getDate();
+
+            var cell = [28, 35, 42].filter(function (n) {
+                return n >= firstWeekDay + thisDays;
+            }).shift();
+
+
+            var days = []
+            for (var i = 0; i < cell; i++) {
+                days[i] = {
+                    date: '',
+                    dayNum: '',
+                };
+            }
+            var now = new Date();
+            var toDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            var inDate;
+            for (var index = firstWeekDay, i = 1; i <= thisDays; index++, i++) {
+                inDate = new Date(year, month, i);
+
+                days[index] = {
+                    date: getYmd(inDate),
+                    dayNum: inDate.getDay(),
+                };
+            }
+            return days;
+        }
+
+        function drawMonth(date) {
+            $('#month_now').text(date.substring(0, 7).replace('-', '.'));
+
+            $('#month_prev').data('ym', prevMonth(date));
+
+            $('#month_next').data('ym', nextMonth(date));
+
+            $('#tbl_month').empty();
+
+            var queryString = window.location.search;
+
+            var urlParams = new URLSearchParams(queryString);
+
+            var dateParam = urlParams.get('date');
+
+            var td = '<td class="__REST__"><a__HREF__>__DATE__</a></td>';
+
+            var hres = '/read/?date=' + date.substring(0, 8);
+            var hasEvent;
+            var tdClass;
+
+            var week = null;
+            var days = fullDays(date);
+
+            for (var i = 0, length = days.length; i < length; i += 7) {
+                week = days.slice(i, i + 7);
+
+
+                var $tr = $('<tr></tr>');
+
+
+                week.forEach(function (obj, index) {
+                    hasEvent = (obj['date'] !== '');
+                    tdclass = (index === 0) ? 'sun' : (index === 6) ? 'sat' : td;
+
+                    $tr.append(td
+                        .replace('__REST__', tdClass)
+                        .replace('__HREF__', (hasEvent) ? ' href="' + hres + (0 + obj['date']).slice(-2) + '"' : '')
+                        .replace('__DATE__', obj['date']));
+                });
+                $('#tbl_month').append($tr);
+            }
+        }
+
+        $(function () {
+            var date = (new Date()).toISOString().substring(0, 10);
+            drawMonth(date);
+
+            $('.month_move').on('click', function (e) {
+                e.preventDefault();
+
+                drawMonth($(this).data('ym'));
+            });
+        });
+    </script>
+
+</body>
+
+</html>

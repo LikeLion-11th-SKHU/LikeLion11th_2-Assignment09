@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Main Page</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+</head>
+
+<body>
+    <div class="date_all">
+        <div class="date_month">
+            <div class="button_wrap">
+                <button type="button" id="month_prev" class="month_move" data-ym="2023-10-01">
+                    < </button>
+                        <span id="month_now">2023.11</span>
+                        <button type="button" id="month_next" class="month_move" data-ym="2023-12-01"> > </button>
+            </div>
+            <a href="{% url 'create' %}">일정추가</a>
+        </div>
+        <table class="date_month">
+            <thead>
+                <tr>
+                    <th>일</th>
+                    <th>월</th>
+                    <th>화</th>
+                    <th>수</th>
+                    <th>목</th>
+                    <th>금</th>
+                    <th>토</th>
+                </tr>
+            </thead>
+            <tbody id="tbl_month"></tbody>
+        </table>
+    </div>
+    <script>
+
+        // 이전 달을 구하는 함수
+        function prevMonth(date) {
+            var target = new Date(date); // 주어진 날짜를 Date 객체로 변환하여 target 변수에 저장
+            target.setDate(1); // 현재 날짜를 1일로 설정해서 달의 첫째 날로 이동
+            target.setMonth(target.getMonth() - 1); // 현재 달에서 1을 빼서 이전 달로 이동
+            return getYmd(target); // 변경된 날짜를 YYYY-MM-DD 형식으로 반환
+        }
+
+        function nextMonth(date) {
+            var target = new Date(date);
+            target.setDate(1);
+            target.setMonth(target.getMonth() + 1);
+            return getYmd(target);
+        }
+
+        // 주어진 날짜를 YYYY-MM-DD 형식의 문자열로 변환하는 함수
+        function getYmd(target) {
+            var month = ('0' + (target.getMonth() + 1)).slice(-2); // 월을 가져오고 0을 추가하여 두 자리로 만듦
+            return [target.getFullYear(), month, '01'].join('-'); // 년, 월, 일을 조합하여 YYYY-MM-DD 형식으로 반환
+        }
+
+        // 주어진 날짜의 월에 해당하는 달력 정보를 계산하는 함수
+        function fullDays(date) {
+            var target = new Date(date); // 주어진 날짜를 Date 객체로 변환
+            var year = target.getFullYear(); // 해당 년도를 가져옴
+            var month = target.getMonth(); // 해당 월을 가져옴
+
+            var firstWeekDay = new Date(year, month, 1).getDay(); // 해당 월의 첫 번째 날의 요일을 가져옴
+            var thisDays = new Date(year, month + 1, 0).getDate(); // 해당 월의 총 일수를 가져옴
+
+            // 월 표시 달력이 가지는 셀 개수는 3중1
+            // var cell = [28, 35, 42].filter(n => n >= (firstWeekDay + thisDays)).shift();
+            var cell = [28, 35, 42].filter(function (n) {
+                return n >= (firstWeekDay + thisDays);
+            }).shift();
+
+            // 달력을 표시하기 위한 정보를 담은 데이터 구조
+            var days = [] // 날짜 정보를 저장할 배열을 초기화
+            for (var i = 0; i < cell; i++) {
+                days[i] = {
+                    date: '',  // 날짜
+                    dayNum: '', // 요일
+                };
+            }
+
+            // 각 날짜에 대한 정보를 업데이트하는 부분
+            var now = new Date(); // 현재 시각을 가져옴
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 오늘 날짜를 가져옴
+
+            var inDate; // 반복문에서 사용할 변수를 선언
+            for (var index = firstWeekDay, i = 1; i <= thisDays; index++, i++) {
+                inDate = new Date(year, month, i); // 현재 월의 날짜를 생성
+
+                // 해당 날짜의 정보를 업데이트
+                days[index] = {
+                    date: i, // 날짜를 업데이트
+                    dayNum: inDate.getDay(), // 해당 날짜의 요일 정보를 업데이트
+                };
+            }
+
+            return days; // 계산된 날짜 반환
+        }
+
+        // 월 담당하는 함수
+        function drawMonth(date) {
+
+            // 현재 월의 년도와 월을 표시
+            $('#month_now').text(date.substring(0, 7).replace('-', '.'));
+
+            // 이전 월의 정보를 설정
+            $('#month_prev').data('ym', prevMonth(date));
+
+            // 다음 월의 정보를 설정
+            $('#month_next').data('ym', nextMonth(date));
+
+            // 월을 표시하는 테이블을 비움
+            $('#tbl_month').empty();
+
+            // 현재 페이지의 URL에서 쿼리 스트링을 가져옴 ?date=YYYY-MM-DD
+            var queryString = window.location.search;
+
+            // URLSearchParams 객체를 생성해서 쿼리 문자열을 파싱하고, 그 결과를 urlParams 변수에 저장
+            var urlParams = new URLSearchParams(queryString);
+
+            // 'date' 파라미터의 값을 가져옴
+            var dateParam = urlParams.get('date');
+
+            // 'date' 파라미터의 값이 있다면 해당 값을 사용하고, 없다면 현재 날짜를 사용
+            var td = '<td class="__REST__"><a __HREF__>__DATE__</a></td>';
+
+            // 링크를 클릭했을 때 이동할 주소를 생성
+            var href = '/read/?date=' + date.substring(0, 8);
+            var hasEvent; // 날짜에 이벤트가 있는지 여부를 저장할 변수
+            var tdClass; // 날짜에 적용할 클래스를 저장할 변수
+
+            var week = null; // 주 단위로 날짜 정보를 저장할 변수
+            var days = fullDays(date); // 현재 월의 날짜 정보를 가져옴
+
+            // 주 단위로 날짜 정보를 묶어서 표시
+            for (var i = 0, length = days.length; i < length; i += 7) {
+                // 전체 셀을 주단위로 잘라서 사용
+                week = days.slice(i, i + 7);
+
+                var $tr = $('<tr></tr>'); // 행 생성
+
+                week.forEach(function (obj, index) { // 주 단위로 날짜 정보를 반복해서 처리
+                    hasEvent = (obj['date'] !== ''); // 날짜 정보가 있는지 확인
+                    tdClass = (index === 0) ? 'sun' : ''; // 첫 번째 날에 sun 클래스 추가
+                    tdClass = (index === 6) ? 'sat' : tdClass; // 마지막 날에 sat 클래스 추가
+
+                    // 행에 셀을 추가
+                    $tr.append(td.replace('__REST__', tdClass) // 클래스를 추가
+                        .replace('__HREF__', (hasEvent) ? 'href="' + href + ('0' + obj['date']).slice(-2) + '"' : '') // 링크를 추가
+                        .replace('__DATE__', obj['date'])); // 날짜를 추가
+                });
+
+
+                $('#tbl_month').append($tr); // 행을 테이블에 추가
+            }
+        }
+        // 페이지가 로드되면 현재 월의 달력을 표시
+        $(function () {
+            var date = (new Date()).toISOString().substring(0, 10); // 현재 날짜를 가져옴 YYYY-MM-DD
+            drawMonth(date); // 현재 월의 달력을 표시 
+
+            $('.month_move').on('click', function (e) { // 이전 월, 다음 월 버튼을 클릭했을 때
+                e.preventDefault(); // 링크의 기본 기능을 차단
+
+                drawMonth($(this).data('ym')); // 클릭한 버튼에 설정된 월의 달력을 표시
+            });
+        });
+
+
+    </script>
+
+
+
+</body>
+
+</html>
