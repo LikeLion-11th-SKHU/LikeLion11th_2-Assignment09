@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-secrete_file = os.path.join(BASE_DIR, "secretes.json")
+secrete_file = os.path.join(BASE_DIR, "secrets.json")
 
 with open(secrete_file) as f:
     secretes = json.loads(f.read())
