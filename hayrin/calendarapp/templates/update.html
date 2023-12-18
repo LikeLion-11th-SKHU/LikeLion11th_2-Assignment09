@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Schedule</title>
+</head>
+<body>
+<h1>해린일정 Update</h1>
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">확인</button>
+</form>
+</body>
+</html>
